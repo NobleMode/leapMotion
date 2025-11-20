@@ -39,7 +39,7 @@ public class MapGenerator : MonoBehaviour
         
     }
     
-    public void CreateMap(Vector2Int size, out GameObject container)
+    public void CreateMap(Vector2Int size)
     {
         // Clear existing walls
         if (_walls.Count > 0)
@@ -201,8 +201,6 @@ public class MapGenerator : MonoBehaviour
         bottomWall.transform.localScale = new Vector3(1f, 5f, size.x * cellSize);
         _boundaries.Add(bottomWall);
         
-        container = _container;
-
         // Generate Pillars
         for (int x = 0; x <= size.x; x++)
         {
@@ -353,9 +351,6 @@ public class MapGenerator : MonoBehaviour
         _endTile = tiles[endNode];
         
         // Optional: Place visual finish object
-        Vector3 finishPos = GetCellPosition(endNode, size, cellSize);
-        GameObject finishObj = Instantiate(_finishObject, _container.transform);
-        finishObj.transform.localPosition = finishPos;
         
         // Calculate Path for Debugging
         _debugPathPoints = GetPath(startNode, endNode, adj, size, cellSize);
