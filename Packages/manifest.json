@@ -1,15 +1,16 @@
 {
-	"scopedRegistries": [
-        {
-            "name": "package.openupm.com",
-            "url": "https://package.openupm.com",
-            "scopes": [
-                "com.ultraleap.tracking"
-            ]
-        }
-    ],	
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ultraleap.tracking"
+      ]
+    }
+  ],
   "dependencies": {
-	  "com.ultraleap.tracking": "7.2.0",
+    "com.ultraleap.tracking": "7.2.0",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "2.5.2",
     "com.unity.feature.development": "1.0.1",
     "com.unity.ide.rider": "3.0.31",

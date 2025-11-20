@@ -2,12 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Leap;
+using TMPro;
 
 public class LeapController : MonoBehaviour
 {
     [SerializeField] private GameObject _container;
     [SerializeField] private LeapProvider _leapProvider;
     [SerializeField] private float _smoothingSpeed = 10f;
+    [SerializeField] private TextMeshProUGUI detectionText;
+    [SerializeField] private TextMeshProUGUI fingerText;
 
     // Start is called before the first frame update
     void Start()
@@ -20,6 +23,38 @@ public class LeapController : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {
+        if (!_leapProvider) return;
+
+        // UI Update
+        Frame frame = _leapProvider.CurrentFrame;
+        string gesture = "None";
+        if (frame.Hands.Count > 0)
+        {
+            Hand hand = frame.Hands[0];
+            gesture = DetectGesture(hand);
+            
+            if (fingerText)
+            {
+                string fingerStatus = $"Fingers: {hand.fingers.Length}\n";
+                fingerStatus += $"Pinky: {hand.GetFinger(Finger.FingerType.PINKY).IsExtended}\n";
+                fingerStatus += $"Ring: {hand.GetFinger(Finger.FingerType.RING).IsExtended}\n";
+                fingerStatus += $"Middle: {hand.GetFinger(Finger.FingerType.MIDDLE).IsExtended}\n";
+                fingerStatus += $"Index: {hand.GetFinger(Finger.FingerType.INDEX).IsExtended}\n";
+                fingerStatus += $"Thumb: {hand.GetFinger(Finger.FingerType.THUMB).IsExtended}";
+                fingerText.text = fingerStatus;
+            }
+        }
+
+        if (detectionText)
+        {
+            detectionText.text = $"Hands Detected: {(frame.Hands.Count > 0 ? "Yes" : "No")}\nGesture: {gesture}";
+        }
+
+
+    }
+
+    internal void UpdateGameplay()
     {
         if (!_leapProvider) return;
 
@@ -45,5 +80,23 @@ public class LeapController : MonoBehaviour
                 _container.transform.rotation = Quaternion.Slerp(_container.transform.rotation, targetRotation, Time.deltaTime * _smoothingSpeed);
             }
         }
+    }
+
+    private string DetectGesture(Hand hand)
+    {
+        // Simple heuristics for gestures
+        if (hand.GrabStrength > 0.8f)
+        {
+            return "Fist";
+        }
+        else if (hand.PinchStrength > 0.8f)
+        {
+            return "Pinch";
+        }
+        else if (hand.GrabStrength < 0.1f)
+        {
+            return "Open Hand";
+        }
+        return "Neutral";
     }
 }
