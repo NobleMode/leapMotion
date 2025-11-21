@@ -12,27 +12,46 @@ public class LeapController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI detectionText;
     [SerializeField] private TextMeshProUGUI fingerText;
 
+    private Rigidbody _containerRb;
+
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         if (_leapProvider == null)
         {
             _leapProvider = FindObjectOfType<LeapProvider>();
         }
+
+        if (_container)
+        {
+            _containerRb = _container.GetComponent<Rigidbody>();
+            if (_containerRb == null)
+            {
+                _containerRb = _container.AddComponent<Rigidbody>();
+            }
+            _containerRb.isKinematic = true;
+            _containerRb.useGravity = false;
+            _containerRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        }
     }
 
+    public string CurrentGesture { get; private set; } = "None";
+    public bool IsHandDetected { get; private set; } = false;
+
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (!_leapProvider) return;
 
         // UI Update
         Frame frame = _leapProvider.CurrentFrame;
-        string gesture = "None";
-        if (frame.Hands.Count > 0)
+        IsHandDetected = frame.Hands.Count > 0;
+        CurrentGesture = "None";
+
+        if (IsHandDetected)
         {
             Hand hand = frame.Hands[0];
-            gesture = DetectGesture(hand);
+            CurrentGesture = DetectGesture(hand);
             
             if (fingerText)
             {
@@ -48,10 +67,13 @@ public class LeapController : MonoBehaviour
 
         if (detectionText)
         {
-            detectionText.text = $"Hands Detected: {(frame.Hands.Count > 0 ? "Yes" : "No")}\nGesture: {gesture}";
+            detectionText.text = $"Hands Detected: {(IsHandDetected ? "Yes" : "No")}\nGesture: {CurrentGesture}";
         }
+    }
 
-
+    void FixedUpdate()
+    {
+        UpdateGameplay();
     }
 
     internal void UpdateGameplay()
@@ -62,7 +84,7 @@ public class LeapController : MonoBehaviour
         if (frame.Hands.Count > 0)
         {
             Hand hand = frame.Hands[0];
-            if (_container)
+            if (_container && _containerRb)
             {
                 Vector3 handEuler = hand.Rotation.eulerAngles;
 
@@ -77,26 +99,42 @@ public class LeapController : MonoBehaviour
 
                 // Apply clamped X and Z, but reduce the Y rotation influence significantly
                 Quaternion targetRotation = Quaternion.Euler(clampedX, clampedY, clampedZ);
-                _container.transform.rotation = Quaternion.Slerp(_container.transform.rotation, targetRotation, Time.deltaTime * _smoothingSpeed);
+                Quaternion nextRotation = Quaternion.Slerp(_containerRb.rotation, targetRotation, Time.fixedDeltaTime * _smoothingSpeed);
+                _containerRb.MoveRotation(nextRotation);
             }
         }
     }
 
-    private string DetectGesture(Hand hand)
+    private static string DetectGesture(Hand hand)
     {
-        // Simple heuristics for gestures
-        if (hand.GrabStrength > 0.8f)
+        bool thumb = hand.GetFinger(Finger.FingerType.THUMB).IsExtended;
+        bool index = hand.GetFinger(Finger.FingerType.INDEX).IsExtended;
+        bool middle = hand.GetFinger(Finger.FingerType.MIDDLE).IsExtended;
+        bool ring = hand.GetFinger(Finger.FingerType.RING).IsExtended;
+        bool pinky = hand.GetFinger(Finger.FingerType.PINKY).IsExtended;
+
+        // Start Game: Thumb + Index only (L-shape)
+        if (thumb && index && !middle && !ring && !pinky)
         {
-            return "Fist";
+            return "StartGame";
         }
-        else if (hand.PinchStrength > 0.8f)
+        // Victory/Retry: Index + Middle (V-sign)
+        // Allow thumb to be whatever, usually V sign has thumb tucked but sometimes not
+        if (index && middle && !ring && !pinky)
         {
-            return "Pinch";
+            return "VictoryRetry";
         }
-        else if (hand.GrabStrength < 0.1f)
+        // Exit: Thumb + Middle (Rude? or just specific)
+        if (thumb && middle && !index && !ring && !pinky)
         {
-            return "Open Hand";
+            return "Exit";
         }
+
+        // Fallback / Neutral
+        if (hand.GrabStrength > 0.8f) return "Fist";
+        if (hand.PinchStrength > 0.8f) return "Pinch";
+        if (hand.GrabStrength < 0.1f) return "Open Hand";
+
         return "Neutral";
     }
 }
