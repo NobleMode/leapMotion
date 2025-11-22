@@ -93,8 +93,8 @@ public class LeapController : MonoBehaviour
                 float z = (handEuler.z > 180) ? handEuler.z - 360 : handEuler.z;
                 float y = (handEuler.y > 180) ? handEuler.y - 360 : handEuler.y;
 
-                float clampedX = Mathf.Clamp(x, -25f, 25f);
-                float clampedZ = Mathf.Clamp(z, -25f, 25f);
+                float clampedX = Mathf.Clamp(x, -35f, 35f);
+                float clampedZ = Mathf.Clamp(z, -35f, 35f);
                 float clampedY = Mathf.Clamp(y, -5f, 5f);
 
                 // Apply clamped X and Z, but reduce the Y rotation influence significantly

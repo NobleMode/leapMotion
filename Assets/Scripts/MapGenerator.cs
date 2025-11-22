@@ -27,7 +27,7 @@ public class MapGenerator : MonoBehaviour
     GameObject _ceiling; // Ceiling object
     GameObject _endTile; // Finish object
     GameObject _startTile; // Start object
-    GameObject _balls;
+    List<GameObject> _activeBalls = new List<GameObject>();
 
     
     List<Vector3> _debugPathPoints; // Debug path points
@@ -60,13 +60,16 @@ public class MapGenerator : MonoBehaviour
         Destroy(_startTile);
         _startTile = null;
 
-        Destroy(_balls);
-        _balls = null;
+        foreach (var ball in _activeBalls)
+        {
+            Destroy(ball);
+        }
+        _activeBalls.Clear();
 
         _container.SetActive(false);
     }
     
-    public void CreateMap(Vector2Int size)
+    public void CreateMap(Vector2Int size, int ballCount)
     {
         ClearMap();
         
@@ -388,7 +391,8 @@ public class MapGenerator : MonoBehaviour
         
         
         // Add Finish Trigger
-        _endTile.AddComponent<FinishTrigger>();
+        var finishTrigger = _endTile.AddComponent<FinishTrigger>();
+        finishTrigger.Setup(ballCount);
         var trigger = _endTile.AddComponent<BoxCollider>();
         trigger.isTrigger = true;
         trigger.size = new Vector3(1, 5, 1); // Tall trigger
@@ -397,7 +401,32 @@ public class MapGenerator : MonoBehaviour
         // Calculate Path for Debugging
         _debugPathPoints = GetPath(startNode, endNode, adj, size, cellSize);
         
-        _balls = Instantiate(_ballsObject, _startTile.transform.position + new Vector3(0, 2.5f, 0), Quaternion.identity);
+        // Instantiate Balls
+        var usedSpawnIndices = new HashSet<int>();
+        usedSpawnIndices.Add(endNode); // Don't spawn at finish
+
+        // Calculate distances from End Node to ensure balls spawn far enough away
+        var distancesFromEnd = GetDistances(endNode, adj, size.x * size.y);
+        var maxDistFromEnd = 0;
+        for (var i = 0; i < distancesFromEnd.Length; i++) if (distancesFromEnd[i] > maxDistFromEnd) maxDistFromEnd = distancesFromEnd[i];
+        var minSpawnDist = (int)(maxDistFromEnd * 0.5f); // Balls must be at least 50% of max distance away
+
+        for (int i = 0; i < ballCount; i++)
+        {
+            int randomNode;
+            int attempts = 0;
+            do
+            {
+                randomNode = Random.Range(0, size.x * size.y);
+                attempts++;
+            } while ((usedSpawnIndices.Contains(randomNode) || distancesFromEnd[randomNode] < minSpawnDist) && attempts < 1000);
+
+            usedSpawnIndices.Add(randomNode);
+            
+            var spawnTile = tiles[randomNode];
+            var ball = Instantiate(_ballsObject, spawnTile.transform.position + new Vector3(0, 2.5f, 0), Quaternion.identity);
+            _activeBalls.Add(ball);
+        }
 
         // Adjust Camera Height
         if (_camera)

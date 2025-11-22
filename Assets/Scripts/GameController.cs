@@ -11,10 +11,12 @@ public class GameController : MonoBehaviour
     [SerializeField] private MapGenerator _mapGenerator;
     [SerializeField] private LeapController _leapController;
     [SerializeField] private Vector2Int _mapSize = new Vector2Int(7, 7);
+    [SerializeField] private int _ballCount = 1;
 
     [Header("UI - Map Customization")]
     [SerializeField] private TMP_InputField inputMapX;
     [SerializeField] private TMP_InputField inputMapY;
+    [SerializeField] private TMP_InputField inputBallCount;
 
     [Header("UI - Timer")]
     [SerializeField] private TMP_Text timerTextGame;
@@ -58,6 +60,7 @@ public class GameController : MonoBehaviour
         // Initialize Inputs
         if (inputMapX) inputMapX.text = _mapSize.x.ToString();
         if (inputMapY) inputMapY.text = _mapSize.y.ToString();
+        if (inputBallCount) inputBallCount.text = _ballCount.ToString();
 
         // Load Best Time
         if (timerTextMenuBest)
@@ -249,6 +252,7 @@ public class GameController : MonoBehaviour
         // Parse Map Size
         if (inputMapX && int.TryParse(inputMapX.text, out int x)) _mapSize.x = x;
         if (inputMapY && int.TryParse(inputMapY.text, out int y)) _mapSize.y = y;
+        if (inputBallCount && int.TryParse(inputBallCount.text, out int balls)) _ballCount = balls;
 
         _gameTimer = 0f;
         PlaySound(start);
@@ -256,7 +260,7 @@ public class GameController : MonoBehaviour
         mainScreen.screen.SetActive(false);
         pauseScreen.screen.SetActive(false);
         winScreen.screen.SetActive(false);
-        _mapGenerator.CreateMap(_mapSize);
+        _mapGenerator.CreateMap(_mapSize, _ballCount);
     }
 
     public void ContinueGame()
@@ -272,7 +276,7 @@ public class GameController : MonoBehaviour
     {
         _gameTimer = 0f;
         PlaySound(start);
-        _mapGenerator.CreateMap(_mapSize); // Regenerate map
+        _mapGenerator.CreateMap(_mapSize, _ballCount); // Regenerate map
         _currentGameState = CurrentGameState.GAME;
         winScreen.screen.SetActive(false);
         mainScreen.screen.SetActive(false);
@@ -307,7 +311,7 @@ public class GameController : MonoBehaviour
             // Timer Logic
             if (timerTextVictoryCurrent) timerTextVictoryCurrent.text = FormatTime(_gameTimer);
 
-            if (_mapSize.x == 7 && _mapSize.y == 7)
+            if (_mapSize.x == 7 && _mapSize.y == 7 && _ballCount == 1)
             {
                 float bestTime = PlayerPrefs.GetFloat(BestTimeKey, float.MaxValue);
                 if (_gameTimer < bestTime)
