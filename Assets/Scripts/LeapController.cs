@@ -8,9 +8,10 @@ public class LeapController : MonoBehaviour
 {
     [SerializeField] private GameObject _container;
     [SerializeField] private LeapProvider _leapProvider;
-    [SerializeField] private float _smoothingSpeed = 10f;
+    [SerializeField] private float _smoothingSpeed = 4f;
     [SerializeField] private TextMeshProUGUI detectionText;
     [SerializeField] private TextMeshProUGUI fingerText;
+    [SerializeField] private GameController _gameController;
 
     private Rigidbody _containerRb;
 
@@ -78,7 +79,7 @@ public class LeapController : MonoBehaviour
 
     internal void UpdateGameplay()
     {
-        if (!_leapProvider) return;
+        if (!_leapProvider || _gameController._currentGameState != CurrentGameState.GAME) return;
 
         Frame frame = _leapProvider.CurrentFrame;
         if (frame.Hands.Count > 0)

@@ -307,7 +307,7 @@ public class MapGenerator : MonoBehaviour
                 var tile = Instantiate(_floorObject, _floorContainer.transform);
                 var px = (x - size.x / 2.0f + 0.5f) * cellSize;
                 var pz = (y - size.y / 2.0f + 0.5f) * cellSize;
-                tile.transform.localPosition = new Vector3(px, 0, pz);
+                tile.transform.localPosition = new Vector3(px, -0.5f, pz);
                 tile.transform.localScale = new Vector3(1f / 2, 1, 1f / 2);
                 
                 tiles[x + y * size.x] = tile;
@@ -425,6 +425,7 @@ public class MapGenerator : MonoBehaviour
             
             var spawnTile = tiles[randomNode];
             var ball = Instantiate(_ballsObject, spawnTile.transform.position + new Vector3(0, 2.5f, 0), Quaternion.identity);
+            ball.AddComponent<BallBehavior>();
             _activeBalls.Add(ball);
         }
 

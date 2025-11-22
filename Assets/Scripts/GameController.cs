@@ -37,7 +37,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private AudioClip handLost;
     [SerializeField] private AudioClip handDetectedClip;
 
-    private CurrentGameState _currentGameState = CurrentGameState.MAIN;
+    internal CurrentGameState _currentGameState {get; set;} = CurrentGameState.MAIN;
     private float _gameTimer = 0f;
     private const string BestTimeKey = "BestTime_7x7";
 
@@ -58,9 +58,41 @@ public class GameController : MonoBehaviour
         }
 
         // Initialize Inputs
-        if (inputMapX) inputMapX.text = _mapSize.x.ToString();
-        if (inputMapY) inputMapY.text = _mapSize.y.ToString();
-        if (inputBallCount) inputBallCount.text = _ballCount.ToString();
+        if (inputMapX)
+        {
+            inputMapX.text = _mapSize.x.ToString();
+            inputMapX.onEndEdit.AddListener((value) => {;
+                if (int.TryParse(value, out int x))
+                {
+                    _mapSize.x = x > 15 ? 15 : x;
+                    inputMapX.text = _mapSize.x.ToString();
+                }
+            });
+        }
+
+        if (inputMapY)
+        {
+            inputMapY.text = _mapSize.y.ToString();
+            inputMapY.onEndEdit.AddListener((value) => {
+                if (int.TryParse(value, out int y))
+                {
+                    _mapSize.y = y > 15 ? 15 : y;
+                    inputMapY.text = _mapSize.y.ToString();
+                }
+            });
+        }
+
+        if (inputBallCount)
+        {
+            inputBallCount.text = _ballCount.ToString();
+            inputBallCount.onEndEdit.AddListener((value) => {
+                if (int.TryParse(value, out int balls))
+                {
+                    _ballCount = balls > 4 ? 4 : balls;
+                    inputBallCount.text = _ballCount.ToString();
+                }
+            });
+        }
 
         // Load Best Time
         if (timerTextMenuBest)
@@ -250,9 +282,9 @@ public class GameController : MonoBehaviour
     public void StartGame()
     {
         // Parse Map Size
-        if (inputMapX && int.TryParse(inputMapX.text, out int x)) _mapSize.x = x;
-        if (inputMapY && int.TryParse(inputMapY.text, out int y)) _mapSize.y = y;
-        if (inputBallCount && int.TryParse(inputBallCount.text, out int balls)) _ballCount = balls;
+        if (inputMapX && int.TryParse(inputMapX.text, out int x)) _mapSize.x = x > 15 ? 15 : x;
+        if (inputMapY && int.TryParse(inputMapY.text, out int y)) _mapSize.y = y > 15 ? 15 : y;
+        if (inputBallCount && int.TryParse(inputBallCount.text, out int balls)) _ballCount = balls > 4 ? 4 : balls;
 
         _gameTimer = 0f;
         PlaySound(start);
@@ -309,19 +341,19 @@ public class GameController : MonoBehaviour
             _currentGameState = CurrentGameState.FINISH;
 
             // Timer Logic
-            if (timerTextVictoryCurrent) timerTextVictoryCurrent.text = FormatTime(_gameTimer);
+            if (timerTextVictoryCurrent) timerTextVictoryCurrent.text = "Time Elapsed: " + FormatTime(_gameTimer);
 
-            if (_mapSize.x == 7 && _mapSize.y == 7 && _ballCount == 1)
+            if (_mapSize is { x: 7, y: 7 } && _ballCount == 1)
             {
                 float bestTime = PlayerPrefs.GetFloat(BestTimeKey, float.MaxValue);
                 if (_gameTimer < bestTime)
                 {
                     PlayerPrefs.SetFloat(BestTimeKey, _gameTimer);
                     PlayerPrefs.Save();
-                    if (timerTextVictoryBest) timerTextVictoryBest.text = "NEW BEST TIME\n" + FormatTime(_gameTimer);
+                    if (timerTextVictoryBest) timerTextVictoryBest.text = "NEW BEST TIME!!!";
                     
                     // Update Menu Best Time immediately
-                    if (timerTextMenuBest) timerTextMenuBest.text = "Best Time: " + FormatTime(_gameTimer) + "\n(Must be 7 by 7)";
+                    if (timerTextMenuBest) timerTextMenuBest.text = "Best Time: " + FormatTime(_gameTimer) + "\n(Must be 7 x 7)";
                 }
                 else
                 {
